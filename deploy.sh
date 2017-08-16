@@ -96,20 +96,21 @@ function deploy_kubernetes {
 [ "$1" ] || { usage; exit 1; }
 [ -f "$1" ] || { echo "Error: $1 not exists or not a file!"; exit 1; }
 
+
+
+# TODO：判断发行版，只支持 centos 7
+
+
+
+date
+set -x
+
 source $(readlink -f $1) || { echo "'source $(readlink -f $1)' failed!"; exit 1; }
 
 [ "${API_IP}" ] || { echo "Error: API_IP not defined!"; exit 1; }
 [ "${KUBERNETES_API_IP}" ] || { echo "Error: KUBERNETES_API_IP not defined!"; exit 1; }
 [ "${NEUTRON_EXT_IF}" ] || { echo "Error: NEUTRON_EXT_IF not defined!"; exit 1; }
 
-
-
-# TODO：判断发行版，只支持 centos 7
-
-
-date
-
-set -x
 
 export API_IP
 export NEUTRON_EXT_IF
