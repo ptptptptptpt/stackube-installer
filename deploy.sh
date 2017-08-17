@@ -94,23 +94,28 @@ function deploy_kubernetes {
 # main
 ######################################
 
+## check distro
+source ${programDir}/lib_common.sh || { echo "Error: 'source ${programDir}/lib_common.sh' failed!"; exit 1; }
+MSG=`Sorry, only CentOS 7.x supported for now.`
+if ! is_fedora; then
+    echo ${MSG}; exit 1
+fi
+mainVersion=`echo ${os_RELEASE} | awk -F\. '{print $1}' `
+if [ "${os_VENDOR}" == "CentOS" ] && [ "${mainVersion}" == "7" ]; then
+    true
+else
+    echo ${MSG}; exit 1
+fi
+
+
+## config
 [ "$1" ] || { usage; exit 1; }
 [ -f "$1" ] || { echo "Error: $1 not exists or not a file!"; exit 1; }
 
-
-
-# TODO：判断发行版，只支持 centos 7
-
-
-
-set -x
-
 source $(readlink -f $1) || { echo "'source $(readlink -f $1)' failed!"; exit 1; }
-
 [ "${API_IP}" ] || { echo "Error: API_IP not defined!"; exit 1; }
 [ "${KUBERNETES_API_IP}" ] || { echo "Error: KUBERNETES_API_IP not defined!"; exit 1; }
 [ "${NEUTRON_EXT_IF}" ] || { echo "Error: NEUTRON_EXT_IF not defined!"; exit 1; }
-
 
 export API_IP
 export NEUTRON_EXT_IF
@@ -131,10 +136,13 @@ export CONTAINER_CIDR="10.244.1.0/24"
 export FRAKTI_VERSION="v1.0"
 
 
+## log
 logDir='/var/log/stackube/'
 logFile="${logDir}/install.log-$(date '+%Y-%m-%d_%H-%M-%S')"
 mkdir -p ${logDir} || exit 1
 
+
+## start
 date '+%Y-%m-%d %H:%M:%S' | tee -a ${logFile}
 
 echo "

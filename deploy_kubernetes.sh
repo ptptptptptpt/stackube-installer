@@ -19,7 +19,7 @@ set -x
 ## install hyper
 yum install -y libvirt || exit 1
 if command -v /usr/bin/hyperd > /dev/null 2>&1; then
-    echo "hyperd already installed on this host, using it instead"
+    echo "hyperd already installed on this host, using it."
 else
     curl -sSL https://hypercontainer.io/install | bash  || exit 1
 fi
@@ -37,12 +37,16 @@ EOF
 
 ## install frakti
 if command -v /usr/bin/frakti > /dev/null 2>&1; then
-    rm -f /usr/bin/frakti  || exit 1
+    echo "frakti already installed on this host, using it."
+else
+    curl -sSL https://github.com/kubernetes/frakti/releases/download/${FRAKTI_VERSION}/frakti -o /usr/bin/frakti  || exit 1
+    chmod +x /usr/bin/frakti  || exit 1
 fi
-curl -sSL https://github.com/kubernetes/frakti/releases/download/${FRAKTI_VERSION}/frakti -o /usr/bin/frakti  || exit 1
-chmod +x /usr/bin/frakti  || exit 1
+
 dockerInfo=`docker info ` || exit 1
-cgroup_driver=`echo "${dockerInfo}" | awk '/Cgroup Driver/{print $3}' ` || exit 1
+cgroup_driver=`echo "${dockerInfo}" | awk '/Cgroup Driver/{print $3}' `
+[ "${cgroup_driver}" ] || exit 1
+
 echo "[Unit]
 Description=Hypervisor-based container runtime for Kubernetes
 Documentation=https://github.com/kubernetes/frakti
