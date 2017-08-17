@@ -125,8 +125,11 @@ kubectl -n kube-system delete daemonset kube-proxy  ||  exit 1
 
 source /etc/stackube/openstack/admin-openrc.sh   ||  exit 1
 netList=`openstack network list --long -f value`  ||  exit 1
-public_network=$(echo "${netList}" | grep External | awk '{print $1}')
+public_network=$(echo "${netList}" | grep External | grep ' br-ex ' | awk '{print $1}')
 [ "${public_network}" ] || exit 1
+nnn=`echo "${public_network}" | wc -l`
+[ $nnn -gt 1 ] && exit 1
+
 cat > ${programDir}/stackube-configmap.yaml <<EOF
 kind: ConfigMap
 apiVersion: v1

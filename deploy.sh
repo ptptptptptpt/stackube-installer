@@ -66,7 +66,7 @@ function deploy_openstack {
     ovs-vsctl show
 
     source /etc/stackube/openstack/admin-openrc.sh  || return 1
-    openstack network create --external  br-ex  || return 1
+    openstack network create --external --provider-physical-network physnet1 --provider-network-type flat br-ex  || return 1
     openstack network list
     openstack subnet list
 
@@ -91,6 +91,7 @@ function deploy_kubernetes {
 
 
 ######################################
+# main
 ######################################
 
 [ "$1" ] || { usage; exit 1; }
@@ -102,7 +103,6 @@ function deploy_kubernetes {
 
 
 
-date
 set -x
 
 source $(readlink -f $1) || { echo "'source $(readlink -f $1)' failed!"; exit 1; }
@@ -131,13 +131,40 @@ export CONTAINER_CIDR="10.244.1.0/24"
 export FRAKTI_VERSION="v1.0"
 
 
-install_docker || exit 1
+logDir='/var/log/stackube/'
+logFile="${logDir}/install.log-$(date '+%Y-%m-%d_%H-%M-%S')"
+mkdir -p ${logDir} || exit 1
 
-deploy_openstack || exit 1
+date '+%Y-%m-%d %H:%M:%S' | tee -a ${logFile}
 
-deploy_kubernetes || exit 1
+echo "
+API_IP=${API_IP}
+NEUTRON_EXT_IF=${NEUTRON_EXT_IF}
+KUBERNETES_API_IP=${KUBERNETES_API_IP}
 
-date
+MYSQL_ROOT_PWD=${MYSQL_ROOT_PWD}
+MYSQL_KEYSTONE_PWD=${MYSQL_KEYSTONE_PWD}
+KEYSTONE_ADMIN_PWD=${KEYSTONE_ADMIN_PWD}
+RABBITMQ_PWD=${RABBITMQ_PWD}
+KEYSTONE_NEUTRON_PWD=${KEYSTONE_NEUTRON_PWD}
+MYSQL_NEUTRON_PWD=${MYSQL_NEUTRON_PWD}
+
+KEYSTONE_URL=${KEYSTONE_URL}
+KEYSTONE_ADMIN_URL=${KEYSTONE_ADMIN_URL}
+CLUSTER_CIDR=${CLUSTER_CIDR}
+CLUSTER_GATEWAY=${CLUSTER_GATEWAY}
+CONTAINER_CIDR=${CONTAINER_CIDR}
+FRAKTI_VERSION=${FRAKTI_VERSION}
+" >> ${logFile}
+
+{ install_docker || exit 1; } 2>&1 | tee -a ${logFile}
+
+{ deploy_openstack || exit 1; } 2>&1 | tee -a ${logFile}
+
+{ deploy_kubernetes || exit 1; } 2>&1 | tee -a ${logFile}
+
+
+date '+%Y-%m-%d %H:%M:%S' | tee -a ${logFile}
 
 
 exit 0
