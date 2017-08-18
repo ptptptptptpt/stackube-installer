@@ -102,9 +102,12 @@ systemctl enable hyperd frakti libvirtd  || exit 1
 systemctl restart hyperd libvirtd  || exit 1
 sleep 3
 systemctl restart frakti  || exit 1
-
-
 sleep 10
+## check
+hyperctl list  || exit 1
+pgrep -f '/usr/bin/frakti'  || exit 1
+[ -e /var/run/frakti.sock ]  || exit 1
+
 
 
 

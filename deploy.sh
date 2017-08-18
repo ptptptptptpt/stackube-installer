@@ -27,7 +27,7 @@ enabled=1
 gpgcheck=1
 gpgkey=https://yum.dockerproject.org/gpg
 EOF
-        yum install docker-engine-1.12.6 -y || return 1
+        yum install docker-engine-1.12.6 docker-engine-selinux-1.12.6 -y || return 1
         #sed -i 's|ExecStart=.*|ExecStart=/usr/bin/dockerd  --storage-opt dm.mountopt=nodiscard --storage-opt dm.blkdiscard=false|g' /usr/lib/systemd/system/docker.service
         sed -i 's|ExecStart=.*|ExecStart=/usr/bin/dockerd  -s overlay |g' /usr/lib/systemd/system/docker.service
         systemctl daemon-reload  || return 1
@@ -39,7 +39,7 @@ EOF
 }
 
 
-function deploy_openstack {
+function deploy_openstack_keystone {
     echo "Deploying OpenStack Keystone..."
     /bin/bash ${programDir}/deploy_openstack_keystone.sh
     if [ "$?" == "0" ]; then
@@ -49,6 +49,15 @@ function deploy_openstack {
         return 1
     fi
 
+    yum install centos-release-openstack-ocata.noarch -y  || return 1
+    yum install python-openstackclient  || return 1
+
+    source /etc/stackube/openstack/admin-openrc.sh  || return 1
+    openstack endpoint list
+}
+
+
+function deploy_openstack_neutron {
     echo "Deploying OpenStack Neutron..."
     /bin/bash ${programDir}/deploy_openstack_neutron.sh
     if [ "$?" == "0" ]; then
@@ -60,9 +69,7 @@ function deploy_openstack {
 
     sleep 10
 
-    yum install centos-release-openstack-ocata.noarch -y  || return 1
-    yum install python-openstackclient openvswitch -y  || return 1
-
+    yum install openvswitch -y  || return 1
     ovs-vsctl show
 
     source /etc/stackube/openstack/admin-openrc.sh  || return 1
@@ -73,13 +80,26 @@ function deploy_openstack {
 }
 
 
+
+function deploy_ceph {
+    echo "Deploying ceph..."
+    /bin/bash ${programDir}/deploy_ceph.sh
+    if [ "$?" == "0" ]; then
+        echo -e "\nCeph deployed successfully!\n"
+    else
+        echo -e "\nCeph deployed failed!\n"
+        return 1
+    fi
+}
+
+
 function deploy_kubernetes {
     echo "Deploying Kubernetes..."
     /bin/bash ${programDir}/deploy_kubernetes.sh
     if [ "$?" == "0" ]; then
         echo -e "\nKubernetes deployed successfully!\n"
     else
-        echo -e "\Kubernetes deployed failed!\n"
+        echo -e "\nKubernetes deployed failed!\n"
         return 1
     fi
 
@@ -96,7 +116,7 @@ function deploy_kubernetes {
 
 ## check distro
 source ${programDir}/lib_common.sh || { echo "Error: 'source ${programDir}/lib_common.sh' failed!"; exit 1; }
-MSG=`Sorry, only CentOS 7.x supported for now.`
+MSG='Sorry, only CentOS 7.x supported for now.'
 if ! is_fedora; then
     echo ${MSG}; exit 1
 fi
@@ -128,6 +148,13 @@ export RABBITMQ_PWD=${RABBITMQ_PWD:-rabbitmq123}
 export KEYSTONE_NEUTRON_PWD=${KEYSTONE_NEUTRON_PWD:-KeystoneNeutron123}
 export MYSQL_NEUTRON_PWD=${MYSQL_NEUTRON_PWD:-MysqlNeutron123}
 
+## ceph
+export CEPH_PUBLIC_IP=${CEPH_PUBLIC_IP:-${API_IP}}
+export CEPH_CLUSTER_IP=${CEPH_CLUSTER_IP:-${API_IP}}
+export CEPH_FSID=${CEPH_FSID:-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee}
+export CEPH_OSD_DATA_DIR=${CEPH_OSD_DATA_DIR:-/var/lib/stackube/openstack/ceph_osd}
+
+## kubernetes
 export KEYSTONE_URL="https://${API_IP}:5001/v2.0"
 export KEYSTONE_ADMIN_URL="https://${API_IP}:35358/v2.0"
 export CLUSTER_CIDR="10.244.0.0/16"
@@ -143,8 +170,6 @@ mkdir -p ${logDir} || exit 1
 
 
 ## start
-date '+%Y-%m-%d %H:%M:%S' | tee -a ${logFile}
-
 echo "
 API_IP=${API_IP}
 NEUTRON_EXT_IF=${NEUTRON_EXT_IF}
@@ -157,6 +182,11 @@ RABBITMQ_PWD=${RABBITMQ_PWD}
 KEYSTONE_NEUTRON_PWD=${KEYSTONE_NEUTRON_PWD}
 MYSQL_NEUTRON_PWD=${MYSQL_NEUTRON_PWD}
 
+CEPH_PUBLIC_IP=${CEPH_PUBLIC_IP}
+CEPH_CLUSTER_IP=${CEPH_CLUSTER_IP}
+CEPH_FSID=${CEPH_FSID}
+CEPH_OSD_DATA_DIR=${CEPH_OSD_DATA_DIR}
+
 KEYSTONE_URL=${KEYSTONE_URL}
 KEYSTONE_ADMIN_URL=${KEYSTONE_ADMIN_URL}
 CLUSTER_CIDR=${CLUSTER_CIDR}
@@ -165,14 +195,22 @@ CONTAINER_CIDR=${CONTAINER_CIDR}
 FRAKTI_VERSION=${FRAKTI_VERSION}
 " >> ${logFile}
 
+echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') install_docker" | tee -a ${logFile}
 { install_docker || exit 1; } 2>&1 | tee -a ${logFile}
 
-{ deploy_openstack || exit 1; } 2>&1 | tee -a ${logFile}
+echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_openstack_keystone" | tee -a ${logFile}
+{ deploy_openstack_keystone || exit 1; } 2>&1 | tee -a ${logFile}
 
-{ deploy_kubernetes || exit 1; } 2>&1 | tee -a ${logFile}
+echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_openstack_neutron" | tee -a ${logFile}
+{ deploy_openstack_neutron || exit 1; } 2>&1 | tee -a ${logFile}
 
+echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_ceph" | tee -a ${logFile}
+{ deploy_ceph || exit 1; } 2>&1 | tee -a ${logFile}
 
-date '+%Y-%m-%d %H:%M:%S' | tee -a ${logFile}
+echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_kubernetes" | tee -a ${logFile}
+#{ deploy_kubernetes || exit 1; } 2>&1 | tee -a ${logFile}
+
+echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') All done." | tee -a ${logFile}
 
 
 exit 0
