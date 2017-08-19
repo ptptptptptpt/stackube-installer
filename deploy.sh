@@ -236,7 +236,7 @@ echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') All done." | tee -a ${logFile}
 echo "
 Additional information:
  * File /etc/stackube/openstack/admin-openrc.sh has been created. To use openstack command line tools you need to source the file.
- * File /etc/kubernetes/admin.conf has been created. To use kubectl you need to do `export KUBECONFIG=/etc/kubernetes/admin.conf`.
+ * File /etc/kubernetes/admin.conf has been created. To use kubectl you need to do 'export KUBECONFIG=/etc/kubernetes/admin.conf'.
  * The installation log file is available at: ${logFile}
 "
 

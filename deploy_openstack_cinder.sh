@@ -190,7 +190,6 @@ sleep 10
 
 
 ## host config
-yum install ceph -y || exit 1
 cp -f /var/lib/stackube/openstack/ceph_mon_config/ceph.client.cinder.keyring /etc/ceph/ || exit 1
 
 ## check
