@@ -10,3 +10,9 @@ KEYSTONE_ADMIN_PWD='KeystoneAdmin123'
 RABBITMQ_PWD='rabbitmq123'
 KEYSTONE_NEUTRON_PWD='KeystoneNeutron123'
 MYSQL_NEUTRON_PWD='MysqlNeutron123'
+
+CEPH_FSID='aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+CEPH_OSD_DATA_DIR='/var/lib/stackube/openstack/ceph_osd'
+
+KEYSTONE_CINDER_PWD='KeystoneCinder123'
+MYSQL_CINDER_PWD='MysqlCinder123'

@@ -43,6 +43,7 @@ docker run -d  --net host  \
     -v /var/lib/stackube/openstack/ceph_mon_config:/etc/ceph/:rw  \
     -v /var/lib/stackube/openstack/ceph_mon:/var/lib/ceph/:rw  \
     \
+    -e "KOLLA_SERVICE_NAME=ceph-mon"  \
     -e "HOSTNAME=${CEPH_PUBLIC_IP}"  \
     -e "KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" \
     \
@@ -83,6 +84,7 @@ docker run -d  --net host  \
     -v /var/log/stackube/openstack:/var/log/kolla/:rw  \
     -v ${CEPH_OSD_DATA_DIR}:/var/lib/ceph/:rw  \
     \
+    -e "KOLLA_SERVICE_NAME=ceph-osd"  \
     -e "KOLLA_CONFIG_STRATEGY=COPY_ALWAYS" \
     -e "OSD_ID=${osdId}"  \
     -e "JOURNAL_PARTITION=/var/lib/ceph/osd/ceph-${osdId}/journal" \
@@ -92,8 +94,14 @@ docker run -d  --net host  \
 
 sleep 5
 
-docker exec -it stackube_ceph_mon ceph -s || exit 1
 docker exec -it stackube_ceph_mon ceph osd crush tree || exit 1
+
+
+## host config
+yum install ceph -y  || exit 1
+cp -f /var/lib/stackube/openstack/ceph_mon_config/* /etc/ceph/ || exit 1
+ceph -s || exit 1
+
 
 
 exit 0
