@@ -214,24 +214,31 @@ FRAKTI_VERSION=${FRAKTI_VERSION}
 " >> ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') install_docker" | tee -a ${logFile}
-#{ install_docker || exit 1; } 2>&1 | tee -a ${logFile}
+{ install_docker || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_openstack_keystone" | tee -a ${logFile}
-#{ deploy_openstack_keystone || exit 1; } 2>&1 | tee -a ${logFile}
+{ deploy_openstack_keystone || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_openstack_neutron" | tee -a ${logFile}
-#{ deploy_openstack_neutron || exit 1; } 2>&1 | tee -a ${logFile}
+{ deploy_openstack_neutron || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_ceph" | tee -a ${logFile}
-#{ deploy_ceph || exit 1; } 2>&1 | tee -a ${logFile}
+{ deploy_ceph || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_openstack_cinder" | tee -a ${logFile}
 { deploy_openstack_cinder || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_kubernetes" | tee -a ${logFile}
-#{ deploy_kubernetes || exit 1; } 2>&1 | tee -a ${logFile}
+{ deploy_kubernetes || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') All done." | tee -a ${logFile}
+
+echo "
+Additional information:
+ * File /etc/stackube/openstack/admin-openrc.sh has been created. To use openstack command line tools you need to source the file.
+ * File /etc/kubernetes/admin.conf has been created. To use kubectl you need to do `export KUBECONFIG=/etc/kubernetes/admin.conf`.
+ * The installation log file is available at: ${logFile}
+"
 
 
 exit 0
