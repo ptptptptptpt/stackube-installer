@@ -131,7 +131,6 @@ sleep 2
 docker rm stackube_bootstrap_cinder
 
 
-
 ## start_container - cinder-api
 docker run -d  --net host  \
     --name stackube_cinder_api  \
@@ -144,8 +143,7 @@ docker run -d  --net host  \
     --restart unless-stopped \
     kolla/centos-binary-cinder-api:4.0.0 || exit 1
 
-
-
+sleep 5
 
 ## start_container - cinder-scheduler
 cp -f /etc/stackube/openstack/cinder-api/cinder.conf  /etc/stackube/openstack/cinder-scheduler/  || exit 1
@@ -161,7 +159,7 @@ docker run -d  --net host  \
     --restart unless-stopped \
     kolla/centos-binary-cinder-scheduler:4.0.0 || exit 1
 
-
+sleep 5
 
 
 ## create osd pool for cinder volume service
@@ -188,15 +186,16 @@ docker run -d  --net host  \
     --privileged  \
     kolla/centos-binary-cinder-volume:4.0.0 || exit 1
 
-
-
+sleep 10
 
 
 ## host config
+yum install ceph -y || exit 1
 cp -f /var/lib/stackube/openstack/ceph_mon_config/ceph.client.cinder.keyring /etc/ceph/ || exit 1
 
 ## check
 rbd -p cinder --id cinder --keyring=/etc/ceph/ceph.client.cinder.keyring ls || exit 1
+source /etc/stackube/openstack/admin-openrc.sh 
 openstack volume service list || exit 1
 
 

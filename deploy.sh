@@ -80,7 +80,6 @@ function deploy_openstack_neutron {
 }
 
 
-
 function deploy_ceph {
     echo "Deploying ceph..."
     /bin/bash ${programDir}/deploy_ceph.sh
@@ -88,6 +87,18 @@ function deploy_ceph {
         echo -e "\nCeph deployed successfully!\n"
     else
         echo -e "\nCeph deployed failed!\n"
+        return 1
+    fi
+}
+
+
+function deploy_openstack_cinder {
+    echo "Deploying OpenStack Cinder..."
+    /bin/bash ${programDir}/deploy_openstack_cinder.sh
+    if [ "$?" == "0" ]; then
+        echo -e "\nOpenStack Cinder deployed successfully!\n"
+    else
+        echo -e "\nOpenStack Cinder deployed failed!\n"
         return 1
     fi
 }
@@ -154,6 +165,10 @@ export CEPH_CLUSTER_IP=${CEPH_CLUSTER_IP:-${API_IP}}
 export CEPH_FSID=${CEPH_FSID:-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee}
 export CEPH_OSD_DATA_DIR=${CEPH_OSD_DATA_DIR:-/var/lib/stackube/openstack/ceph_osd}
 
+## cinder
+export KEYSTONE_CINDER_PWD=${KEYSTONE_CINDER_PWD:-KeystoneCinder123}
+export MYSQL_CINDER_PWD=${MYSQL_CINDER_PWD:-MysqlCinder123}
+
 ## kubernetes
 export KEYSTONE_URL="https://${API_IP}:5001/v2.0"
 export KEYSTONE_ADMIN_URL="https://${API_IP}:35358/v2.0"
@@ -187,6 +202,9 @@ CEPH_CLUSTER_IP=${CEPH_CLUSTER_IP}
 CEPH_FSID=${CEPH_FSID}
 CEPH_OSD_DATA_DIR=${CEPH_OSD_DATA_DIR}
 
+KEYSTONE_CINDER_PWD=${KEYSTONE_CINDER_PWD}
+MYSQL_CINDER_PWD=${MYSQL_CINDER_PWD}
+
 KEYSTONE_URL=${KEYSTONE_URL}
 KEYSTONE_ADMIN_URL=${KEYSTONE_ADMIN_URL}
 CLUSTER_CIDR=${CLUSTER_CIDR}
@@ -196,16 +214,19 @@ FRAKTI_VERSION=${FRAKTI_VERSION}
 " >> ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') install_docker" | tee -a ${logFile}
-{ install_docker || exit 1; } 2>&1 | tee -a ${logFile}
+#{ install_docker || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_openstack_keystone" | tee -a ${logFile}
-{ deploy_openstack_keystone || exit 1; } 2>&1 | tee -a ${logFile}
+#{ deploy_openstack_keystone || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_openstack_neutron" | tee -a ${logFile}
-{ deploy_openstack_neutron || exit 1; } 2>&1 | tee -a ${logFile}
+#{ deploy_openstack_neutron || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_ceph" | tee -a ${logFile}
-{ deploy_ceph || exit 1; } 2>&1 | tee -a ${logFile}
+#{ deploy_ceph || exit 1; } 2>&1 | tee -a ${logFile}
+
+echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_openstack_cinder" | tee -a ${logFile}
+{ deploy_openstack_cinder || exit 1; } 2>&1 | tee -a ${logFile}
 
 echo -e "\n\n$(date '+%Y-%m-%d %H:%M:%S') deploy_kubernetes" | tee -a ${logFile}
 #{ deploy_kubernetes || exit 1; } 2>&1 | tee -a ${logFile}

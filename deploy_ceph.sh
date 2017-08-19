@@ -99,6 +99,7 @@ docker exec -it stackube_ceph_mon ceph osd crush tree || exit 1
 
 ## host config
 yum install ceph -y  || exit 1
+systemctl disable ceph.target ceph-mds.target ceph-mon.target ceph-osd.target
 cp -f /var/lib/stackube/openstack/ceph_mon_config/* /etc/ceph/ || exit 1
 ceph -s || exit 1
 
